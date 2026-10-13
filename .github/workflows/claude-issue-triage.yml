@@ -1,0 +1,52 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    # Si el issue ya menciona @claude, lo atiende claude.yml: evitamos correr dos veces.
+    if: |
+      !contains(github.event.issue.body, '@claude') &&
+      !contains(github.event.issue.title, '@claude')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Analizar el issue con Claude Code
+        id: triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # Fuerza el modo "tag": crea un comentario de seguimiento en el issue
+          # y publica ahi el analisis. Sin esto, el modo automatico no comenta.
+          track_progress: true
+
+          prompt: |
+            Se acaba de abrir el issue #${{ github.event.issue.number }} en ${{ github.repository }}.
+
+            Analizalo contra el codigo de este repo (index.html, style.css, game.js)
+            y responde en espaniol, en el comentario de seguimiento, con:
+
+            1. Tipo de issue: bug, mejora, feature o pregunta.
+            2. Que archivo(s) y que funcion/constante concreta hay que tocar
+               (citalos como `game.js:123`).
+            3. Plan de implementacion en pasos cortos.
+            4. Riesgos o efectos colaterales a tener en cuenta.
+            5. Si al issue le falta informacion para poder resolverlo, decilo
+               explicitamente y pedi lo que falta.
+
+            IMPORTANTE: esto es solo analisis. No edites archivos, no hagas commits
+            y no abras un pull request. Si el usuario quiere la implementacion,
+            comentara `@claude` en el issue y lo atendera el workflow claude.yml.
+
+          claude_args: '--max-turns 20'
