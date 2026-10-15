@@ -26,7 +26,7 @@ There is no lint, test, or build command in this repo — changes are verified b
 
 Everything lives in module-level `let` state (`board`, `current`, `next`, `score`, `lines`, `level`, `paused`, `gameOver`, `dropAccum`, `dropInterval`, `animId`) mutated directly by functions — there is no state container or class.
 
-- **Board**: `ROWS × COLS` matrix where each cell is `0` (empty) or a color index `1–7` identifying the piece type.
+- **Board**: `ROWS × COLS` matrix where each cell is `0` (empty) or a color index `1–8` identifying the piece type.
 - **Pieces**: `PIECES` holds each shape as a square matrix using its own color index as the fill value (see the `PIECES`/`COLORS` arrays at the top of the file). `rotateCW` rotates a shape via transpose + row-reverse.
 - **Collision** (`collide`): checks a shape at a given offset against board bounds and existing locked cells.
 - **Wall kicks** (`tryRotate`): after rotating, tries offsets `[0, -1, 1, -2, 2]` until one doesn't collide, else the rotation is discarded.
