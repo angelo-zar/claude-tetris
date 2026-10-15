@@ -4,9 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tetris</title>
+  <script>
+    document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';
+  </script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <button id="theme-toggle" class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Modo claro">
+    <span id="theme-label">Oscuro</span>
+    <span class="switch"></span>
+  </button>
+
   <div class="wrapper">
     <h1 class="game-title">TETRIS</h1>
     <div class="game-container">
