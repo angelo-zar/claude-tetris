@@ -2,7 +2,7 @@
 
 // Estado de la partida y reglas del tablero.
 
-let board, current, queue, hold, holdUsed, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let mode, bag, board, current, queue, hold, holdUsed, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -13,8 +13,25 @@ function newPiece(type) {
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
 }
 
+// ¿Está activa esta mecánica en el modo actual? (ver MODES en config.js)
+function has(feature) {
+  return Boolean(MODES[mode]?.[feature]);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Bolsa de 7: cada pieza estándar sale una vez por ronda. En Arcade, a veces sale una especial.
 function randomPiece() {
-  return newPiece(Math.floor(Math.random() * (PIECES.length - 1)) + 1);
+  if (has('specials') && Math.random() < SPECIAL_CHANCE)
+    return newPiece(SPECIAL_TYPES[Math.floor(Math.random() * SPECIAL_TYPES.length)]);
+  if (!bag.length) bag = shuffle([...STANDARD_TYPES]);
+  return newPiece(bag.pop());
 }
 
 function refillQueue() {

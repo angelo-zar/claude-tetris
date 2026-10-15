@@ -16,6 +16,10 @@ const COLORS = [
   '#81d4fa', // J - light blue
   '#ffb74d', // L - orange
   '#b0bec5', // N - tuerca (gris metálico)
+  '#f06292', // + - pentominó (rosa)
+  '#aed581', // U - pentominó (lima)
+  '#7986cb', // Y - pentominó (índigo)
+  '#fff59d', // single 1×1 (premio)
 ];
 
 const PIECES = [
@@ -28,7 +32,22 @@ const PIECES = [
   [[6,0,0],[6,6,6],[0,0,0]],                  // J
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
   [[8,8,8],[8,0,8],[8,8,8]],                  // N - tuerca (hueco central)
+  [[0,9,0],[9,9,9],[0,9,0]],                  // + - pentominó
+  [[10,0,10],[10,10,10],[0,0,0]],             // U - pentominó
+  [[0,0,0,0],[11,11,11,11],[0,11,0,0],[0,0,0,0]], // Y - pentominó
+  [[12]],                                      // single 1×1
 ];
+
+const STANDARD_TYPES = [1, 2, 3, 4, 5, 6, 7]; // se reparten en bolsas de 7
+const SPECIAL_TYPES = [8, 9, 10, 11];        // tuerca y pentominós (solo Arcade)
+const SPECIAL_CHANCE = 0.12;                 // probabilidad de que salga una especial
+const SINGLE_TYPE = 12;                      // premio tras un Tetris (solo Arcade)
+
+// Modos de juego: qué mecánicas extra activa cada uno.
+const MODES = {
+  classic: { name: 'Clásico', hint: 'Hold y combos', specials: false },
+  arcade:  { name: 'Arcade',  hint: 'Piezas especiales', specials: true },
+};
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 

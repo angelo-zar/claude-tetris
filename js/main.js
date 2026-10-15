@@ -1,33 +1,83 @@
 'use strict';
 
-// Bucle de juego, entrada de teclado, overlay y tema.
+// Bucle de juego, entrada de teclado, menú/overlay y tema.
 
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
-const restartBtn = document.getElementById('restart-btn');
+const overlayButtons = document.getElementById('overlay-buttons');
+
+let uiMode = 'menu'; // 'menu' (overlay con botones) | 'play'
+
+// Muestra el overlay con un título, un subtítulo y botones [{ label, hint, action }].
+function showOverlay(title, subtitle, buttons, titleClass = '') {
+  uiMode = 'menu';
+  overlayTitle.textContent = title;
+  overlayTitle.className = titleClass;
+  overlayScore.textContent = subtitle;
+  overlayButtons.replaceChildren(...buttons.map(({ label, hint, action }) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'overlay-btn';
+    btn.textContent = label;
+    if (hint) {
+      const small = document.createElement('small');
+      small.textContent = hint;
+      btn.appendChild(small);
+    }
+    btn.addEventListener('click', () => {
+      btn.blur(); // evita que Space reactive el botón durante el juego
+      action();
+    });
+    return btn;
+  }));
+  overlay.classList.remove('hidden');
+}
+
+function hideOverlay() {
+  overlay.classList.add('hidden');
+  uiMode = 'play';
+}
+
+function showMenu() {
+  cancelAnimationFrame(animId);
+  current = null; // sin partida activa: P no reanuda nada
+  paused = false;
+  queue = [];
+  hold = null;
+  holdUsed = false;
+  drawNext();
+  drawHold();
+  draw();
+  showOverlay('TETRIS', 'Elige un modo', Object.entries(MODES).map(([key, m]) => ({
+    label: m.name,
+    hint: m.hint,
+    action: () => init(key),
+  })));
+}
+
+const restartButtons = () => [
+  { label: 'Reiniciar', action: () => init(mode) },
+  { label: 'Menú', action: showMenu },
+];
 
 function endGame() {
   gameOver = true;
   cancelAnimationFrame(animId);
   sfx('gameover');
-  overlayTitle.textContent = 'GAME OVER';
-  overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
-  overlay.classList.remove('hidden');
+  showOverlay('GAME OVER', `Puntuación: ${score.toLocaleString()}`, restartButtons(), 'danger');
 }
 
 function togglePause() {
-  if (gameOver) return;
+  if (gameOver || !current) return;
   paused = !paused;
   if (!paused) {
-    overlay.classList.add('hidden');
+    hideOverlay();
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    overlay.classList.remove('hidden');
+    showOverlay('PAUSA', '', [{ label: 'Continuar', action: togglePause }, ...restartButtons()]);
   }
 }
 
@@ -49,7 +99,8 @@ function loop(ts) {
   animId = requestAnimationFrame(loop);
 }
 
-function init() {
+function init(newMode) {
+  mode = newMode;
   board = createBoard();
   score = 0;
   lines = 0;
@@ -60,6 +111,7 @@ function init() {
   dropAccum = 0;
   lastTime = performance.now();
   queue = [];
+  bag = [];
   resetScoring();
   resetEffects();
   hold = null;
@@ -68,7 +120,7 @@ function init() {
   spawn();
   drawHold();
   updateHUD();
-  overlay.classList.add('hidden');
+  hideOverlay();
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -77,7 +129,7 @@ document.addEventListener('keydown', e => {
   ensureAudio();
   if (e.code === 'KeyM') { toggleMute(); return; }
   if (e.code === 'KeyP') { togglePause(); return; }
-  if (paused || gameOver) return;
+  if (uiMode !== 'play' || paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
       tryMove(-1);
@@ -105,11 +157,6 @@ document.addEventListener('keydown', e => {
   updateHUD();
 });
 
-restartBtn.addEventListener('click', () => {
-  init();
-  restartBtn.blur(); // evita que Space reinicie la partida durante el juego
-});
-
 const themeToggle = document.getElementById('theme-toggle');
 const themeLabel = document.getElementById('theme-label');
 
@@ -126,5 +173,12 @@ themeToggle.addEventListener('click', () => {
   themeToggle.blur(); // evita que Space reactive el botón durante el juego
 });
 
-init();
+// Arranque: tablero vacío detrás del menú de modos.
+board = createBoard();
+resetScoring();
+resetEffects();
+score = lines = 0;
+level = 1;
+updateHUD();
 applyTheme(document.documentElement.dataset.theme);
+showMenu();

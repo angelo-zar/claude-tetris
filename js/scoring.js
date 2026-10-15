@@ -48,6 +48,11 @@ function scoreClear(rows, tspin) {
   addPopup((backToBack ? 'B2B ' : '') + name, tspin ? COLORS[3] : n >= 4 ? COLORS[1] : '#ffffff');
   if (combo > 1) addPopup(`COMBO x${combo}`, '#ffd54f');
 
+  if (n >= 4 && has('specials')) {
+    queue.splice(1, 0, newPiece(SINGLE_TYPE)); // premio: justo detrás de la pieza que va a salir
+    addPopup('¡PREMIO 1×1!', COLORS[SINGLE_TYPE]);
+  }
+
   const perfect = board.every(row => row.every(v => !v));
   if (perfect) {
     points += PERFECT_CLEAR_BONUS * level;
