@@ -119,11 +119,16 @@ body {
   align-self: flex-start; /* sin esto el flex column estira el canvas */
 }
 
-#next-canvas {
+#next-canvas,
+#hold-canvas {
   display: block;
   border: 1px solid var(--border);
   background: var(--canvas-bg);
   border-radius: 4px;
+}
+
+#hold-canvas.locked {
+  opacity: 0.35;
 }
 
 /* ---- Controles ---- */

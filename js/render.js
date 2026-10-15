@@ -6,6 +6,8 @@ const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
 const nextCtx = nextCanvas.getContext('2d');
+const holdCanvas = document.getElementById('hold-canvas');
+const holdCtx = holdCanvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
@@ -81,4 +83,9 @@ function drawPreview(context, piece, size) {
 
 function drawNext() {
   drawPreview(nextCtx, queue[0], 30);
+}
+
+function drawHold() {
+  drawPreview(holdCtx, hold && newPiece(hold.type), 30);
+  holdCanvas.classList.toggle('locked', holdUsed); // atenuado: ya se usó en esta pieza
 }

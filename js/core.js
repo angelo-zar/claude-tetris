@@ -2,7 +2,7 @@
 
 // Estado de la partida y reglas del tablero.
 
-let board, current, queue, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, queue, hold, holdUsed, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -108,7 +108,9 @@ function lockPiece() {
   if (gameOver) return; // nunca fijar piezas tras el Game Over (evita sobrescribir celdas)
   merge();
   clearLines();
+  holdUsed = false;
   spawn();
+  drawHold();
 }
 
 function spawn() {
@@ -118,4 +120,21 @@ function spawn() {
     endGame();
   }
   drawNext();
+}
+
+// Guarda la pieza actual en el hold (o la intercambia con la guardada). Un uso por pieza.
+function holdPiece() {
+  if (holdUsed) return;
+  const held = hold;
+  hold = { type: current.type };
+  if (held) {
+    current = newPiece(held.type);
+  } else {
+    current = queue.shift();
+    refillQueue();
+    drawNext();
+  }
+  holdUsed = true;
+  drawHold();
+  if (collide(current.shape, current.x, current.y)) endGame();
 }

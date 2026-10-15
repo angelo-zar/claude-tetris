@@ -59,8 +59,11 @@ function init() {
   dropAccum = 0;
   lastTime = performance.now();
   queue = [];
+  hold = null;
+  holdUsed = false;
   refillQueue();
   spawn();
+  drawHold();
   updateHUD();
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
@@ -83,6 +86,11 @@ document.addEventListener('keydown', e => {
     case 'ArrowUp':
     case 'KeyX':
       tryRotate();
+      break;
+    case 'KeyC':
+    case 'ShiftLeft':
+    case 'ShiftRight':
+      holdPiece();
       break;
     case 'Space':
       e.preventDefault();
