@@ -42,6 +42,10 @@
   padding: 0;
 }
 
+[hidden] {
+  display: none !important; /* que display: flex no anule el atributo hidden */
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -197,6 +201,8 @@ kbd {
 }
 
 #overlay-score {
+  white-space: pre-line;
+  line-height: 1.5;
   font-family: 'Courier New', Courier, monospace;
   font-size: 14px;
   color: var(--accent);
@@ -322,11 +328,21 @@ kbd {
   border-radius: 4px;
 }
 
-#queue-canvas[hidden] {
-  display: none;
-}
-
 .overlay-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ---- Objetivo del desafío ---- */
+.objective {
+  white-space: pre-line;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.objective::first-line {
+  font-weight: 700;
+  color: var(--accent);
 }

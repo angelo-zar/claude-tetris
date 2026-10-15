@@ -37,6 +37,7 @@ function updateStatus() {
   if (slowMs > 0) items.push(`🐢 lento ${(slowMs / 1000).toFixed(1)}s`);
   if (freeHoldMs > 0) items.push(`♾️ hold libre ${(freeHoldMs / 1000).toFixed(1)}s`);
   if (previewMs > 0) items.push(`👁️ cola visible ${(previewMs / 1000).toFixed(1)}s`);
+  if (current && rotationDir() < 0) items.push('🔄 rotación inversa');
   const text = items.join('\n');
   if (statusEl.textContent !== text) statusEl.textContent = text;
   if (queueCanvas.hidden !== !(previewMs > 0)) {
@@ -83,7 +84,7 @@ function draw() {
   // board
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
-      drawBlock(ctx, c, r, board[r][c], BLOCK);
+      if (cellVisible(r, c)) drawBlock(ctx, c, r, board[r][c], BLOCK);
 
   if (!current) return drawEffects(); // menú inicial: solo el tablero
 

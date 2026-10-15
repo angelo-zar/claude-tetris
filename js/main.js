@@ -46,6 +46,8 @@ function showMenu() {
   paused = false;
   resetPowerups();
   resetSkills();
+  challenge = null;
+  setupChallenge();
   updateStatus();
   queue = [];
   hold = null;
@@ -56,20 +58,38 @@ function showMenu() {
   showOverlay('TETRIS', 'Elige un modo', Object.entries(MODES).map(([key, m]) => ({
     label: m.name,
     hint: m.hint,
-    action: () => init(key),
+    action: key === 'challenge' ? showChallenges : () => init(key),
   })));
 }
 
+function showChallenges() {
+  showOverlay('DESAFÍOS', 'Elige un reto', [
+    ...CHALLENGES.map(c => ({ label: c.name, hint: c.hint, action: () => init('challenge', c.id) })),
+    { label: 'Volver', action: showMenu },
+  ]);
+}
+
 const restartButtons = () => [
-  { label: 'Reiniciar', action: () => init(mode) },
+  { label: 'Reiniciar', action: () => init(mode, challenge?.id) },
   { label: 'Menú', action: showMenu },
 ];
 
-function endGame() {
+function finishGame(title, subtitle, titleClass, sound) {
   gameOver = true;
   cancelAnimationFrame(animId);
-  sfx('gameover');
-  showOverlay('GAME OVER', `Puntuación: ${score.toLocaleString()}`, restartButtons(), 'danger');
+  draw();
+  sfx(sound);
+  showOverlay(title, subtitle, restartButtons(), titleClass);
+}
+
+function endGame(reason) {
+  const summary = `Puntuación: ${score.toLocaleString()}`;
+  finishGame('GAME OVER', reason ? `${reason}\n${summary}` : summary, 'danger', 'gameover');
+}
+
+// Reto superado (modo Desafíos).
+function winGame() {
+  finishGame('¡SUPERADO!', `${challenge.name} · ${formatTime(elapsed)}\nPuntuación: ${score.toLocaleString()}`, 'success', 'win');
 }
 
 function togglePause() {
@@ -91,6 +111,8 @@ function loop(ts) {
   if (freezeMs > 0) freezeMs = Math.max(0, freezeMs - dt); // Congelar: sin caída automática
   else dropAccum += dt;
   tickSkills(dt);
+  tickChallenge(dt);
+  if (gameOver) return; // el reto puede terminar la partida (tiempo, basura)
   if (dropAccum >= dropInterval * (slowMs > 0 ? SLOW_FACTOR : 1)) {
     dropAccum = 0;
     if (!collide(current.shape, current.x, current.y + 1)) {
@@ -106,8 +128,9 @@ function loop(ts) {
   animId = requestAnimationFrame(loop);
 }
 
-function init(newMode) {
+function init(newMode, challengeId) {
   mode = newMode;
+  challenge = CHALLENGES.find(c => c.id === challengeId) || null;
   board = createBoard();
   score = 0;
   lines = 0;
@@ -125,6 +148,7 @@ function init(newMode) {
   resetSkills();
   hold = null;
   holdUsed = false;
+  setupChallenge();
   refillQueue();
   spawn();
   drawHold();
@@ -152,7 +176,7 @@ document.addEventListener('keydown', e => {
       break;
     case 'ArrowUp':
     case 'KeyX':
-      tryRotate();
+      tryRotate(rotationDir());
       break;
     case 'KeyC':
     case 'ShiftLeft':

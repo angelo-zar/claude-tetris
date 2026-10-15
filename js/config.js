@@ -80,6 +80,7 @@ const SKILLS = [
 const MODES = {
   classic: { name: 'Clásico', hint: 'Hold y combos', specials: false },
   arcade:  { name: 'Arcade',  hint: 'Piezas especiales, power-ups y habilidades', specials: true, powerups: true, skills: true },
+  challenge: { name: 'Desafíos', hint: 'Cinco retos con objetivo' },
 };
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
@@ -89,3 +90,13 @@ const TSPIN_SCORES = [400, 800, 1200, 1600]; // T-spin sin líneas, single, doub
 const B2B_MULTIPLIER = 1.5;                  // Tetris/T-spin consecutivos
 const PERFECT_CLEAR_BONUS = 3000;            // × nivel, al dejar el tablero vacío
 const MAX_COMBO = 10;                        // tope del multiplicador de combo
+
+// Retos del modo Desafíos. Cada propiedad activa una regla en challenges.js.
+const LOCK_FLASH_MS = 500; // reto Invisibles: cuánto se ve la pieza recién fijada
+const CHALLENGES = [
+  { id: 'sprint',    name: 'Sprint',           hint: '40 líneas en 2 minutos',                goalLines: 40, timeLimit: 120000 },
+  { id: 'garbage',   name: 'Basura',           hint: 'Sobrevive 2 min; sube basura cada 10 s', survive: 120000, garbageEvery: 10000 },
+  { id: 'fixed',     name: 'Bloques fijos',    hint: 'Elimina todos los bloques grises',       fixedRows: 8 },
+  { id: 'invisible', name: 'Invisibles',       hint: '20 líneas sin ver las piezas fijadas',   goalLines: 20, invisible: true },
+  { id: 'reverse',   name: 'Rotación inversa', hint: '40 líneas; desde nivel 3 rota al revés', goalLines: 40, reverseFromLevel: 3 },
+];

@@ -60,8 +60,10 @@ function rotateCW(shape) {
   return result;
 }
 
-function tryRotate() {
-  const rotated = rotateCW(current.shape);
+// dir = 1 horario, -1 antihorario (tres giros horarios).
+function tryRotate(dir = 1) {
+  let rotated = rotateCW(current.shape);
+  if (dir < 0) rotated = rotateCW(rotateCW(rotated));
   const kicks = [0, -1, 1, -2, 2];
   for (const kick of kicks) {
     if (!collide(rotated, current.x + kick, current.y)) {
@@ -140,6 +142,7 @@ function lockPiece() {
   const rows = clearLines();
   if (rows.length) explodeWilds();
   scoreClear(rows, tspin);
+  if (afterLockChallenge(current)) return; // reto superado: no sale otra pieza
   holdUsed = false;
   spawn();
   drawHold();
