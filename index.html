@@ -24,6 +24,11 @@
           <canvas id="hold-canvas" width="120" height="120"></canvas>
         </div>
 
+        <div id="energy-section" class="panel-section" hidden>
+          <span class="label">ENERGÍA <kbd>E</kbd></span>
+          <div class="energy"><div id="energy-fill" class="energy-fill"></div></div>
+        </div>
+
         <div id="status" class="status"></div>
 
         <div class="panel-section controls">
@@ -34,6 +39,7 @@
             <li><kbd>↓</kbd> bajar</li>
             <li><kbd>Space</kbd> caída</li>
             <li><kbd>C</kbd><kbd>Shift</kbd> reservar</li>
+            <li><kbd>E</kbd> habilidad</li>
             <li><kbd>P</kbd> pausa</li>
             <li><kbd>M</kbd> sonido: <span id="mute-state">on</span></li>
           </ul>
@@ -73,6 +79,7 @@
         <div class="panel-section">
           <span class="label">NEXT</span>
           <canvas id="next-canvas" width="120" height="120"></canvas>
+          <canvas id="queue-canvas" width="120" height="120" hidden></canvas>
         </div>
       </aside>
     </div>
@@ -83,6 +90,7 @@
   <script src="js/core.js"></script>
   <script src="js/scoring.js"></script>
   <script src="js/powerups.js"></script>
+  <script src="js/skills.js"></script>
   <script src="js/render.js"></script>
   <script src="js/main.js"></script>
 </body>

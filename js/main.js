@@ -7,7 +7,7 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const overlayButtons = document.getElementById('overlay-buttons');
 
-let uiMode = 'menu'; // 'menu' (overlay con botones) | 'play'
+let uiMode = 'menu'; // 'menu' (overlay con botones) | 'play' | 'skill' | 'swap' (selector de habilidades)
 
 // Muestra el overlay con un título, un subtítulo y botones [{ label, hint, action }].
 function showOverlay(title, subtitle, buttons, titleClass = '') {
@@ -15,9 +15,10 @@ function showOverlay(title, subtitle, buttons, titleClass = '') {
   overlayTitle.textContent = title;
   overlayTitle.className = titleClass;
   overlayScore.textContent = subtitle;
-  overlayButtons.replaceChildren(...buttons.map(({ label, hint, action }) => {
+  overlayButtons.replaceChildren(...buttons.map(({ label, hint, action, disabled }) => {
     const btn = document.createElement('button');
     btn.type = 'button';
+    btn.disabled = Boolean(disabled);
     btn.className = 'overlay-btn';
     btn.textContent = label;
     if (hint) {
@@ -43,6 +44,9 @@ function showMenu() {
   cancelAnimationFrame(animId);
   current = null; // sin partida activa: P no reanuda nada
   paused = false;
+  resetPowerups();
+  resetSkills();
+  updateStatus();
   queue = [];
   hold = null;
   holdUsed = false;
@@ -86,7 +90,8 @@ function loop(ts) {
   lastTime = ts;
   if (freezeMs > 0) freezeMs = Math.max(0, freezeMs - dt); // Congelar: sin caída automática
   else dropAccum += dt;
-  if (dropAccum >= dropInterval) {
+  tickSkills(dt);
+  if (dropAccum >= dropInterval * (slowMs > 0 ? SLOW_FACTOR : 1)) {
     dropAccum = 0;
     if (!collide(current.shape, current.x, current.y + 1)) {
       current.y++;
@@ -117,6 +122,7 @@ function init(newMode) {
   resetScoring();
   resetEffects();
   resetPowerups();
+  resetSkills();
   hold = null;
   holdUsed = false;
   refillQueue();
@@ -132,6 +138,7 @@ document.addEventListener('keydown', e => {
   ensureAudio();
   if (e.code === 'KeyM') { toggleMute(); return; }
   if (e.code === 'KeyP') { togglePause(); return; }
+  if ((uiMode === 'skill' || uiMode === 'swap') && handleSkillKey(e.code)) return;
   if (uiMode !== 'play' || paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
@@ -152,6 +159,9 @@ document.addEventListener('keydown', e => {
     case 'ShiftRight':
       holdPiece();
       break;
+    case 'KeyE':
+      openSkills();
+      return;
     case 'Space':
       e.preventDefault();
       hardDrop();
@@ -181,6 +191,7 @@ board = createBoard();
 resetScoring();
 resetEffects();
 resetPowerups();
+resetSkills();
 score = lines = 0;
 level = 1;
 updateHUD();

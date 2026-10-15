@@ -14,6 +14,10 @@ const levelEl = document.getElementById('level');
 const comboEl = document.getElementById('combo');
 const muteEl = document.getElementById('mute-state');
 const statusEl = document.getElementById('status');
+const energySection = document.getElementById('energy-section');
+const energyFill = document.getElementById('energy-fill');
+const queueCanvas = document.getElementById('queue-canvas');
+const queueCtx = queueCanvas.getContext('2d');
 
 function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
@@ -21,14 +25,24 @@ function updateHUD() {
   levelEl.textContent = level;
   comboEl.textContent = combo > 1 ? `x${combo}` : '-';
   muteEl.textContent = muted ? 'off' : 'on';
+  energySection.hidden = !has('skills');
+  energyFill.style.width = `${(energy / ENERGY_MAX) * 100}%`;
+  energySection.classList.toggle('full', energy >= ENERGY_MAX);
 }
 
 // Efectos temporales activos (se llama en cada frame).
 function updateStatus() {
   const items = [];
   if (freezeMs > 0) items.push(`❄️ congelado ${(freezeMs / 1000).toFixed(1)}s`);
+  if (slowMs > 0) items.push(`🐢 lento ${(slowMs / 1000).toFixed(1)}s`);
+  if (freeHoldMs > 0) items.push(`♾️ hold libre ${(freeHoldMs / 1000).toFixed(1)}s`);
+  if (previewMs > 0) items.push(`👁️ cola visible ${(previewMs / 1000).toFixed(1)}s`);
   const text = items.join('\n');
   if (statusEl.textContent !== text) statusEl.textContent = text;
+  if (queueCanvas.hidden !== !(previewMs > 0)) {
+    queueCanvas.hidden = !(previewMs > 0);
+    drawQueue();
+  }
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
@@ -92,10 +106,15 @@ function draw() {
 // Dibuja una pieza centrada en un canvas de 4×4 celdas (preview).
 function drawPreview(context, piece, size) {
   context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  drawPieceInBox(context, piece, size, 0, 0);
+}
+
+// Dibuja la pieza centrada en una caja de 4×4 celdas cuya esquina está en la celda (boxX, boxY).
+function drawPieceInBox(context, piece, size, boxX, boxY) {
   if (!piece) return;
   const shape = piece.shape;
-  const offX = Math.floor((4 - shape[0].length) / 2);
-  const offY = Math.floor((4 - shape.length) / 2);
+  const offX = boxX + Math.floor((4 - shape[0].length) / 2);
+  const offY = boxY + Math.floor((4 - shape.length) / 2);
   for (let r = 0; r < shape.length; r++)
     for (let c = 0; c < shape[r].length; c++)
       drawBlock(context, offX + c, offY + r, shape[r][c], size);
@@ -130,6 +149,13 @@ function drawPowerupMark(context, shape, ox, oy, size, powerup) {
 
 function drawNext() {
   drawPreview(nextCtx, queue[0], 30);
+  if (!queueCanvas.hidden) drawQueue();
+}
+
+// Las 4 piezas que siguen a NEXT (habilidad Ver 5 piezas), en dos columnas de cajas 4×4.
+function drawQueue() {
+  queueCtx.clearRect(0, 0, queueCanvas.width, queueCanvas.height);
+  queue.slice(1, 5).forEach((piece, i) => drawPieceInBox(queueCtx, piece, 15, (i % 2) * 4, Math.floor(i / 2) * 4));
 }
 
 function drawHold() {

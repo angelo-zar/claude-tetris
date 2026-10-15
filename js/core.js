@@ -132,6 +132,7 @@ function softDrop() {
 
 function lockPiece() {
   if (gameOver) return; // nunca fijar piezas tras el Game Over (evita sobrescribir celdas)
+  takeSnapshot();
   const tspin = isTSpin(); // antes de merge: mira las esquinas libres alrededor de la T
   merge();
   sfx('lock');
@@ -156,7 +157,7 @@ function spawn() {
 
 // Guarda la pieza actual en el hold (o la intercambia con la guardada). Un uso por pieza.
 function holdPiece() {
-  if (holdUsed) return;
+  if (holdUsed && freeHoldMs <= 0) return; // la habilidad Hold libre quita el límite
   const held = hold;
   hold = { type: current.type, powerup: current.powerup };
   if (held) {

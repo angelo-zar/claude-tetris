@@ -40,6 +40,7 @@ const PIECES = [
   [[12]],                                      // single 1×1
 ];
 
+const PIECE_NAMES = [null, 'I', 'O', 'T', 'S', 'Z', 'J', 'L', 'Tuerca', '+', 'U', 'Y', '1×1'];
 const STANDARD_TYPES = [1, 2, 3, 4, 5, 6, 7]; // se reparten en bolsas de 7
 const SPECIAL_TYPES = [8, 9, 10, 11];        // tuerca y pentominós (solo Arcade)
 const SPECIAL_CHANCE = 0.12;                 // probabilidad de que salga una especial
@@ -59,10 +60,26 @@ const POWERUPS = {
   freeze:  { icon: '❄️', name: 'CONGELAR' },
 };
 
+// Habilidades cargables (solo Arcade)
+const ENERGY_MAX = 100;
+const ENERGY_PER_LINE = 10;   // energía por línea limpiada
+const ENERGY_PER_COMBO = 5;   // extra por cada nivel de combo encadenado
+const PREVIEW_MS = 30000;     // Ver 5 piezas
+const SLOW_MS = 10000;        // Ralentizar
+const SLOW_FACTOR = 3;        // el intervalo de caída se multiplica por esto
+const FREE_HOLD_MS = 20000;   // Hold libre
+const SKILLS = [
+  { key: 'preview',  name: 'Ver 5 piezas', hint: 'Muestra la cola durante 30 s' },
+  { key: 'swap',     name: 'Intercambiar', hint: 'Elige otra pieza actual' },
+  { key: 'slow',     name: 'Ralentizar',   hint: 'Caída ×3 más lenta 10 s' },
+  { key: 'undo',     name: 'Deshacer',     hint: 'Revierte la última colocación' },
+  { key: 'freeHold', name: 'Hold libre',   hint: 'Hold sin límite durante 20 s' },
+];
+
 // Modos de juego: qué mecánicas extra activa cada uno.
 const MODES = {
   classic: { name: 'Clásico', hint: 'Hold y combos', specials: false },
-  arcade:  { name: 'Arcade',  hint: 'Piezas especiales y power-ups', specials: true, powerups: true },
+  arcade:  { name: 'Arcade',  hint: 'Piezas especiales, power-ups y habilidades', specials: true, powerups: true, skills: true },
 };
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
