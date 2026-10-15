@@ -10,6 +10,7 @@ const restartBtn = document.getElementById('restart-btn');
 function endGame() {
   gameOver = true;
   cancelAnimationFrame(animId);
+  sfx('gameover');
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
   overlay.classList.remove('hidden');
@@ -59,6 +60,8 @@ function init() {
   dropAccum = 0;
   lastTime = performance.now();
   queue = [];
+  resetScoring();
+  resetEffects();
   hold = null;
   holdUsed = false;
   refillQueue();
@@ -71,14 +74,16 @@ function init() {
 }
 
 document.addEventListener('keydown', e => {
+  ensureAudio();
+  if (e.code === 'KeyM') { toggleMute(); return; }
   if (e.code === 'KeyP') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
-      if (!collide(current.shape, current.x - 1, current.y)) current.x--;
+      tryMove(-1);
       break;
     case 'ArrowRight':
-      if (!collide(current.shape, current.x + 1, current.y)) current.x++;
+      tryMove(1);
       break;
     case 'ArrowDown':
       softDrop();

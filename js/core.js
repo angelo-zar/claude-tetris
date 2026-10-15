@@ -50,9 +50,18 @@ function tryRotate() {
     if (!collide(rotated, current.x + kick, current.y)) {
       current.shape = rotated;
       current.x += kick;
+      lastMoveRotate = true;
+      sfx('rotate');
       return;
     }
   }
+}
+
+function tryMove(dx) {
+  if (collide(current.shape, current.x + dx, current.y)) return;
+  current.x += dx;
+  lastMoveRotate = false;
+  sfx('move');
 }
 
 function merge() {
@@ -62,23 +71,22 @@ function merge() {
         board[current.y + r][current.x + c] = current.shape[r][c];
 }
 
+// Elimina las filas completas y devuelve sus índices (antes de desplazar el tablero).
 function clearLines() {
-  let cleared = 0;
-  for (let r = ROWS - 1; r >= 0; r--) {
-    if (board[r].every(v => v !== 0)) {
-      board.splice(r, 1);
-      board.unshift(new Array(COLS).fill(0));
-      cleared++;
-      r++;
-    }
+  const full = [];
+  for (let r = 0; r < ROWS; r++)
+    if (board[r].every(v => v !== 0)) full.push(r);
+  // en orden ascendente: quitar la fila r no mueve las filas completas de más abajo
+  for (const r of full) {
+    board.splice(r, 1);
+    board.unshift(new Array(COLS).fill(0));
   }
-  if (cleared) {
-    lines += cleared;
-    score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
-    dropInterval = Math.max(100, 1000 - (level - 1) * 90);
-    updateHUD();
-  }
+  return full;
+}
+
+function updateLevel() {
+  level = Math.floor(lines / 10) + 1;
+  dropInterval = Math.max(100, 1000 - (level - 1) * 90);
 }
 
 function ghostY() {
@@ -98,6 +106,7 @@ function softDrop() {
   if (!collide(current.shape, current.x, current.y + 1)) {
     current.y++;
     score += 1;
+    lastMoveRotate = false;
     updateHUD();
   } else {
     lockPiece();
@@ -106,8 +115,10 @@ function softDrop() {
 
 function lockPiece() {
   if (gameOver) return; // nunca fijar piezas tras el Game Over (evita sobrescribir celdas)
+  const tspin = isTSpin(); // antes de merge: mira las esquinas libres alrededor de la T
   merge();
-  clearLines();
+  sfx('lock');
+  scoreClear(clearLines(), tspin);
   holdUsed = false;
   spawn();
   drawHold();
@@ -116,6 +127,7 @@ function lockPiece() {
 function spawn() {
   current = queue.shift();
   refillQueue();
+  lastMoveRotate = false;
   if (collide(current.shape, current.x, current.y)) {
     endGame();
   }
@@ -135,6 +147,8 @@ function holdPiece() {
     drawNext();
   }
   holdUsed = true;
+  lastMoveRotate = false;
+  sfx('hold');
   drawHold();
   if (collide(current.shape, current.x, current.y)) endGame();
 }

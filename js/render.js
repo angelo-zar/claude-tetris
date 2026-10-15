@@ -11,11 +11,15 @@ const holdCtx = holdCanvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
+const comboEl = document.getElementById('combo');
+const muteEl = document.getElementById('mute-state');
 
 function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
   linesEl.textContent = lines;
   levelEl.textContent = level;
+  comboEl.textContent = combo > 1 ? `x${combo}` : '-';
+  muteEl.textContent = muted ? 'off' : 'on';
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
@@ -67,6 +71,8 @@ function draw() {
   for (let r = 0; r < current.shape.length; r++)
     for (let c = 0; c < current.shape[r].length; c++)
       drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
+
+  drawEffects();
 }
 
 // Dibuja una pieza centrada en un canvas de 4×4 celdas (preview).
@@ -88,4 +94,69 @@ function drawNext() {
 function drawHold() {
   drawPreview(holdCtx, hold && newPiece(hold.type), 30);
   holdCanvas.classList.toggle('locked', holdUsed); // atenuado: ya se usó en esta pieza
+}
+
+// ---- Efectos visuales: textos flotantes, destello de filas y partículas ----
+
+const POPUP_MS = 1100;
+const FLASH_MS = 250;
+const PARTICLE_MS = 700;
+let popups = [], flashes = [], particles = [];
+
+function resetEffects() {
+  popups = []; flashes = []; particles = [];
+}
+
+function addPopup(text, color) {
+  popups.push({ text, color, born: performance.now() });
+}
+
+function flashRows(rows) {
+  const now = performance.now();
+  for (const row of rows) {
+    flashes.push({ row, born: now });
+    for (let i = 0; i < 12; i++) {
+      particles.push({
+        x: Math.random() * COLS * BLOCK,
+        y: (row + 0.5) * BLOCK,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: -Math.random() * 0.25 - 0.05,
+        color: COLORS[1 + Math.floor(Math.random() * 7)],
+        born: now,
+      });
+    }
+  }
+}
+
+function drawEffects() {
+  const now = performance.now();
+  flashes = flashes.filter(f => now - f.born < FLASH_MS);
+  particles = particles.filter(p => now - p.born < PARTICLE_MS);
+  popups = popups.filter(p => now - p.born < POPUP_MS);
+
+  for (const f of flashes) {
+    ctx.globalAlpha = 0.7 * (1 - (now - f.born) / FLASH_MS);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, f.row * BLOCK, COLS * BLOCK, BLOCK);
+  }
+  for (const p of particles) {
+    const t = now - p.born;
+    ctx.globalAlpha = 1 - t / PARTICLE_MS;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x + p.vx * t, p.y + p.vy * t + 0.0004 * t * t, 4, 4);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 20px system-ui, sans-serif';
+  popups.forEach((p, i) => {
+    const t = (now - p.born) / POPUP_MS;
+    ctx.globalAlpha = 1 - t * t;
+    ctx.fillStyle = p.color;
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = 3;
+    const y = 220 + i * 28 - t * 30;
+    ctx.strokeText(p.text, COLS * BLOCK / 2, y);
+    ctx.fillText(p.text, COLS * BLOCK / 2, y);
+  });
+  ctx.globalAlpha = 1;
 }

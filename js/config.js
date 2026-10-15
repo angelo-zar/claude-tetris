@@ -33,3 +33,7 @@ const PIECES = [
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
 const QUEUE_SIZE = 5; // piezas generadas por adelantado (queue[0] es la "next")
+const TSPIN_SCORES = [400, 800, 1200, 1600]; // T-spin sin líneas, single, double, triple
+const B2B_MULTIPLIER = 1.5;                  // Tetris/T-spin consecutivos
+const PERFECT_CLEAR_BONUS = 3000;            // × nivel, al dejar el tablero vacío
+const MAX_COMBO = 10;                        // tope del multiplicador de combo
