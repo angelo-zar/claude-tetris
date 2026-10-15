@@ -136,6 +136,7 @@ function softDrop() {
 }
 
 function lockPiece() {
+  if (gameOver) return; // nunca fijar piezas tras el Game Over (evita sobrescribir celdas)
   merge();
   clearLines();
   spawn();
@@ -252,6 +253,8 @@ function loop(ts) {
       lockPiece();
     }
   }
+  // lockPiece() puede terminar la partida: no programar otro frame
+  if (gameOver) return;
   draw();
   animId = requestAnimationFrame(loop);
 }
@@ -299,7 +302,10 @@ document.addEventListener('keydown', e => {
   updateHUD();
 });
 
-restartBtn.addEventListener('click', init);
+restartBtn.addEventListener('click', () => {
+  init();
+  restartBtn.blur(); // evita que Space reinicie la partida durante el juego
+});
 
 const themeToggle = document.getElementById('theme-toggle');
 const themeLabel = document.getElementById('theme-label');
