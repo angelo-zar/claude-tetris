@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Vanilla JS Tetris. Three files, no dependencies, no build step, no package.json, no tests.
+Vanilla JS Tetris. No dependencies, no build step, no package.json, no tests.
 
 - `index.html` — DOM structure: `#board` canvas (300×600, 10×20 grid of 30px blocks), `#next-canvas` preview (120×120), HUD spans (`#score`, `#lines`, `#level`), and the pause/game-over `#overlay`.
 - `style.css` — dark/retro arcade styling.
-- `game.js` — all game logic (~300 lines), plain top-level script (no modules, no classes).
+- `js/*.js` — game logic split into plain classic scripts (no modules, no classes) loaded in order by `index.html`: `config.js` (constants) → `core.js` (state + board rules) → `render.js` (canvas + HUD) → `main.js` (loop, input, overlay, theme). Top-level `let`/`const`/functions are shared globals across them.
 
 ## Running the game
 
@@ -22,7 +22,7 @@ npx serve .
 
 There is no lint, test, or build command in this repo — changes are verified by loading `index.html` in a browser and playing.
 
-## Architecture (`game.js`)
+## Architecture (`js/`)
 
 Everything lives in module-level `let` state (`board`, `current`, `next`, `score`, `lines`, `level`, `paused`, `gameOver`, `dropAccum`, `dropInterval`, `animId`) mutated directly by functions — there is no state container or class.
 
@@ -39,6 +39,6 @@ Everything lives in module-level `let` state (`board`, `current`, `next`, `score
 
 Input is a single `keydown` listener switching on `e.code` (arrows + `KeyX` to rotate, `Space` for hard drop, `KeyP` for pause); it's a no-op while paused or game-over except for the pause key itself.
 
-## Tunable constants (top of `game.js`)
+## Tunable constants (`js/config.js`)
 
 `COLS`, `ROWS`, `BLOCK` (px per cell), `COLORS`, `LINE_SCORES`, initial `dropInterval`. If `COLS`/`ROWS`/`BLOCK` change, update the `#board` canvas `width`/`height` in `index.html` to match (`COLS × BLOCK` and `ROWS × BLOCK`).
