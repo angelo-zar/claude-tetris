@@ -135,7 +135,10 @@ function lockPiece() {
   const tspin = isTSpin(); // antes de merge: mira las esquinas libres alrededor de la T
   merge();
   sfx('lock');
-  scoreClear(clearLines(), tspin);
+  if (current.powerup) applyPowerup(current);
+  const rows = clearLines();
+  if (rows.length) explodeWilds();
+  scoreClear(rows, tspin);
   holdUsed = false;
   spawn();
   drawHold();
@@ -155,9 +158,10 @@ function spawn() {
 function holdPiece() {
   if (holdUsed) return;
   const held = hold;
-  hold = { type: current.type };
+  hold = { type: current.type, powerup: current.powerup };
   if (held) {
     current = newPiece(held.type);
+    current.powerup = held.powerup;
   } else {
     current = queue.shift();
     refillQueue();

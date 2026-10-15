@@ -62,6 +62,7 @@ function scoreClear(rows, tspin) {
   score += Math.round(points);
   lines += n;
   updateLevel();
+  chargePowerup(n);
   flashRows(rows);
 
   if (perfect) sfx('perfect');

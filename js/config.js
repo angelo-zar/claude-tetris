@@ -20,6 +20,8 @@ const COLORS = [
   '#aed581', // U - pentominó (lima)
   '#7986cb', // Y - pentominó (índigo)
   '#fff59d', // single 1×1 (premio)
+  '#ffffff', // comodín (se dibuja en arcoíris)
+  '#607d8b', // bloque fijo / basura
 ];
 
 const PIECES = [
@@ -42,11 +44,25 @@ const STANDARD_TYPES = [1, 2, 3, 4, 5, 6, 7]; // se reparten en bolsas de 7
 const SPECIAL_TYPES = [8, 9, 10, 11];        // tuerca y pentominós (solo Arcade)
 const SPECIAL_CHANCE = 0.12;                 // probabilidad de que salga una especial
 const SINGLE_TYPE = 12;                      // premio tras un Tetris (solo Arcade)
+const WILD_TYPE = 13;                        // celda comodín creada por el power-up Tinte
+const GARBAGE_TYPE = 14;                     // bloque fijo o fila de basura (desafíos)
+
+// Power-ups (solo Arcade)
+const POWERUP_EVERY = 8;   // líneas necesarias para cargar una pieza con power-up
+const FREEZE_MS = 5000;    // duración de Congelar
+const WILD_POINTS = 50;    // puntos × nivel por cada comodín que explota
+const POWERUPS = {
+  bomb:    { icon: '💣', name: 'BOMBA' },
+  laser:   { icon: '⚡', name: 'RAYO' },
+  tint:    { icon: '🎨', name: 'TINTE' },
+  gravity: { icon: '⬇️', name: 'GRAVEDAD' },
+  freeze:  { icon: '❄️', name: 'CONGELAR' },
+};
 
 // Modos de juego: qué mecánicas extra activa cada uno.
 const MODES = {
   classic: { name: 'Clásico', hint: 'Hold y combos', specials: false },
-  arcade:  { name: 'Arcade',  hint: 'Piezas especiales', specials: true },
+  arcade:  { name: 'Arcade',  hint: 'Piezas especiales y power-ups', specials: true, powerups: true },
 };
 
 const LINE_SCORES = [0, 100, 300, 500, 800];

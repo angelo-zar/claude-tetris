@@ -84,7 +84,8 @@ function togglePause() {
 function loop(ts) {
   const dt = ts - lastTime;
   lastTime = ts;
-  dropAccum += dt;
+  if (freezeMs > 0) freezeMs = Math.max(0, freezeMs - dt); // Congelar: sin caída automática
+  else dropAccum += dt;
   if (dropAccum >= dropInterval) {
     dropAccum = 0;
     if (!collide(current.shape, current.x, current.y + 1)) {
@@ -96,6 +97,7 @@ function loop(ts) {
   // lockPiece() puede terminar la partida: no programar otro frame
   if (gameOver) return;
   draw();
+  updateStatus();
   animId = requestAnimationFrame(loop);
 }
 
@@ -114,6 +116,7 @@ function init(newMode) {
   bag = [];
   resetScoring();
   resetEffects();
+  resetPowerups();
   hold = null;
   holdUsed = false;
   refillQueue();
@@ -177,6 +180,7 @@ themeToggle.addEventListener('click', () => {
 board = createBoard();
 resetScoring();
 resetEffects();
+resetPowerups();
 score = lines = 0;
 level = 1;
 updateHUD();

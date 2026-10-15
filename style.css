@@ -280,3 +280,12 @@ kbd {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
+/* ---- Efectos activos (congelar, ralentizar…) ---- */
+.status {
+  white-space: pre-line;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--accent);
+  min-height: 0;
+}
