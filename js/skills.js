@@ -34,7 +34,7 @@ function takeSnapshot() {
     bag: [...bag],
     hold: hold && { ...hold },
     piece: { type: current.type, powerup: current.powerup },
-    score, lines, combo, b2b, powerupCharge,
+    score, lines, combo, maxCombo, b2b, powerupCharge,
   };
 }
 
@@ -48,7 +48,7 @@ const SKILL_ACTIONS = {
     queue = s.queue;
     bag = s.bag;
     hold = s.hold;
-    ({ score, lines, combo, b2b, powerupCharge } = s);
+    ({ score, lines, combo, maxCombo, b2b, powerupCharge } = s);
     updateLevel();
     current = newPiece(s.piece.type);
     current.powerup = s.piece.powerup;

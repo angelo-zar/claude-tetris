@@ -2,12 +2,13 @@
 
 // Puntuación: líneas, combos encadenados, T-spin, Back-to-Back y Perfect Clear.
 
-let combo, b2b, lastMoveRotate;
+let combo, maxCombo, b2b, lastMoveRotate;
 
 const LINE_NAMES = ['', 'SINGLE', 'DOUBLE', 'TRIPLE', 'TETRIS'];
 
 function resetScoring() {
   combo = 0;      // fijaciones consecutivas que limpian líneas
+  maxCombo = 0;   // mejor combo de la partida (tabla de records)
   b2b = false;    // la última limpieza fue "difícil" (Tetris o T-spin)
   lastMoveRotate = false;
 }
@@ -37,6 +38,7 @@ function scoreClear(rows, tspin) {
   }
 
   combo = Math.min(combo + 1, MAX_COMBO);
+  maxCombo = Math.max(maxCombo, combo);
   const difficult = tspin || n >= 4;
   const backToBack = difficult && b2b;
   b2b = difficult;
