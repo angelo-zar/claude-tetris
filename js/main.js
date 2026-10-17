@@ -6,15 +6,19 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const overlayButtons = document.getElementById('overlay-buttons');
+const overlayExtra = document.getElementById('overlay-extra');
 
 let uiMode = 'menu'; // 'menu' (overlay con botones) | 'play' | 'skill' | 'swap' (selector de habilidades)
 
-// Muestra el overlay con un título, un subtítulo y botones [{ label, hint, action }].
-function showOverlay(title, subtitle, buttons, titleClass = '') {
+// Muestra el overlay con un título, un subtítulo, botones [{ label, hint, action }]
+// y, opcionalmente, nodos extra (p. ej. la tabla de records) entre subtítulo y botones.
+function showOverlay(title, subtitle, buttons, titleClass = '', extra = []) {
   uiMode = 'menu';
   overlayTitle.textContent = title;
   overlayTitle.className = titleClass;
   overlayScore.textContent = subtitle;
+  overlayExtra.replaceChildren(...extra);
+  overlayExtra.hidden = !extra.length;
   overlayButtons.replaceChildren(...buttons.map(({ label, hint, action, disabled }) => {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -59,7 +63,7 @@ function showMenu() {
     label: m.name,
     hint: m.hint,
     action: key === 'challenge' ? showChallenges : () => init(key),
-  })));
+  })), '', menuRecordsNodes());
 }
 
 function showChallenges() {
@@ -79,7 +83,7 @@ function finishGame(title, subtitle, titleClass, sound) {
   cancelAnimationFrame(animId);
   draw();
   sfx(sound);
-  showOverlay(title, subtitle, restartButtons(), titleClass);
+  showOverlay(title, subtitle, restartButtons(), titleClass, gameOverRecordsNodes());
 }
 
 function endGame(reason) {
@@ -160,6 +164,8 @@ function init(newMode, challengeId) {
 
 document.addEventListener('keydown', e => {
   ensureAudio();
+  // Escribiendo en un campo (nombre del record): ninguna tecla llega al juego
+  if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
   if (e.code === 'KeyM') { toggleMute(); return; }
   if (e.code === 'KeyP') { togglePause(); return; }
   if ((uiMode === 'skill' || uiMode === 'swap') && handleSkillKey(e.code)) return;
