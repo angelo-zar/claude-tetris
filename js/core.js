@@ -4,6 +4,29 @@
 
 let mode, bag, board, current, queue, hold, holdUsed, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
+// Nivel inicial elegido en el menú (1–START_LEVEL_MAX), persistido. Se aplica en la próxima init().
+const START_LEVEL_MAX = 15;
+let startLevel = loadStartLevel();
+let baseLevel = 1; // nivel mínimo de la partida en curso (Desafíos siempre empieza en 1)
+
+function loadStartLevel() {
+  try {
+    const n = parseInt(localStorage.getItem('startLevel'), 10);
+    return n >= 1 && n <= START_LEVEL_MAX ? n : 1;
+  } catch {
+    return 1;
+  }
+}
+
+function setStartLevel(n) {
+  startLevel = Math.min(START_LEVEL_MAX, Math.max(1, n));
+  try {
+    localStorage.setItem('startLevel', String(startLevel));
+  } catch {
+    // sin almacenamiento: el nivel solo dura esta sesión
+  }
+}
+
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
@@ -104,7 +127,7 @@ function clearLines() {
 }
 
 function updateLevel() {
-  level = Math.floor(lines / 10) + 1;
+  level = Math.max(baseLevel, Math.floor(lines / 10) + 1);
   dropInterval = Math.max(100, 1000 - (level - 1) * 90);
 }
 

@@ -80,6 +80,7 @@ function openSkills() {
 function closeSkills() {
   paused = false;
   hideOverlay();
+  blockHeldKeys();
   updateHUD();
   lastTime = performance.now();
   loop(lastTime);
