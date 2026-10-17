@@ -210,6 +210,23 @@ themeToggle.addEventListener('click', () => {
   themeToggle.blur(); // evita que Space reactive el botón durante el juego
 });
 
+// Selector de skin: cicla entre SKINS y redibuja todos los canvases sin recargar.
+const skinToggle = document.getElementById('skin-toggle');
+const skinLabel = document.getElementById('skin-label');
+
+function refreshSkin() {
+  skinLabel.textContent = skin.name;
+  draw();
+  if (queue) { drawHold(); drawNext(); }
+  else { drawPreview(holdCtx, null, 30); drawPreview(nextCtx, null, 30); } // antes de la primera partida
+}
+
+skinToggle.addEventListener('click', () => {
+  nextSkin();
+  refreshSkin();
+  skinToggle.blur(); // evita que Space reactive el botón durante el juego
+});
+
 // Arranque: tablero vacío detrás del menú de modos.
 board = createBoard();
 resetScoring();
@@ -220,4 +237,5 @@ score = lines = 0;
 level = 1;
 updateHUD();
 applyTheme(document.documentElement.dataset.theme);
+refreshSkin();
 showMenu();

@@ -46,22 +46,27 @@ function updateStatus() {
   }
 }
 
+// Dibuja una celda delegando en la skin activa (js/skins.js).
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
   const color = colorIndex === WILD_TYPE
     ? `hsl(${(performance.now() / 8 + (x + y) * 40) % 360}, 85%, 65%)` // comodín: arcoíris animado
     : COLORS[colorIndex];
   context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  skin.drawCell(context, x * size, y * size, size, color);
   context.globalAlpha = 1;
 }
 
+// Limpia un canvas y pinta el fondo propio de la skin si lo define (si no, se ve el fondo CSS).
+function clearCanvas(context) {
+  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  if (!skin.bg) return;
+  context.fillStyle = skin.bg;
+  context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+}
+
 function drawGrid() {
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
+  ctx.strokeStyle = skin.grid || getComputedStyle(document.documentElement).getPropertyValue('--grid').trim();
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -78,7 +83,7 @@ function drawGrid() {
 }
 
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  clearCanvas(ctx);
   drawGrid();
 
   // board
@@ -106,7 +111,7 @@ function draw() {
 
 // Dibuja una pieza centrada en un canvas de 4×4 celdas (preview).
 function drawPreview(context, piece, size) {
-  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  clearCanvas(context);
   drawPieceInBox(context, piece, size, 0, 0);
 }
 
@@ -155,7 +160,7 @@ function drawNext() {
 
 // Las 4 piezas que siguen a NEXT (habilidad Ver 5 piezas), en dos columnas de cajas 4×4.
 function drawQueue() {
-  queueCtx.clearRect(0, 0, queueCanvas.width, queueCanvas.height);
+  clearCanvas(queueCtx);
   queue.slice(1, 5).forEach((piece, i) => drawPieceInBox(queueCtx, piece, 15, (i % 2) * 4, Math.floor(i / 2) * 4));
 }
 
