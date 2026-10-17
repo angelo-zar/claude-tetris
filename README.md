@@ -20,7 +20,7 @@ Implementación del clásico **Tetris** en JavaScript vanilla, usando HTML5 Canv
   - [Cómo funciona](#cómo-funciona)
     - [1. `index.html`](#1-indexhtml)
     - [2. `style.css`](#2-stylecss)
-    - [3. `game.js`](#3-gamejs)
+    - [3. `js/`](#3-js)
     - [Flujo del juego](#flujo-del-juego)
   - [Tecnologías](#tecnologías)
   - [Estructura del proyecto](#estructura-del-proyecto)
@@ -42,6 +42,12 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Hold**: reserva la pieza actual (una vez por pieza).
+- **Combos, Back-to-Back, T-spin y Perfect Clear** con textos flotantes, partículas y sonido.
+- **Tres modos** desde el menú inicial:
+  - **Clásico**: las 7 piezas estándar (bolsa de 7).
+  - **Arcade**: además, piezas especiales (tuerca 3×3 hueca y pentominós +, U, Y; pieza 1×1 de premio tras un Tetris), **power-ups** (bomba, rayo, tinte, gravedad, congelar) y **habilidades** cargables (ver 5 piezas, intercambiar, ralentizar, deshacer, hold libre).
+  - **Desafíos**: Sprint (40 líneas en 2 min), Basura, Bloques fijos, Invisibles y Rotación inversa.
 
 ---
 
@@ -84,7 +90,10 @@ Después abre `http://localhost:8000` en el navegador.
 | `↑` o `X` | Rotar la pieza en sentido horario |
 | `↓`       | Soft drop (bajar más rápido)      |
 | `Espacio` | Hard drop (caída instantánea)     |
+| `C` o `Shift` | Reservar pieza (hold)          |
+| `E`       | Abrir habilidades (Arcade)        |
 | `P`       | Pausar / reanudar                 |
+| `M`       | Activar / silenciar el sonido     |
 
 ---
 
@@ -104,9 +113,9 @@ Define la estructura visual:
 
 Aporta el aspecto visual con estética _dark / retro arcade_: fondo oscuro, tipografía monoespaciada para los marcadores y _backdrop blur_ en los overlays.
 
-### 3. `game.js`
+### 3. `js/`
 
-Contiene toda la lógica del juego. A grandes rasgos:
+La lógica está repartida en scripts clásicos (sin módulos ni build) que comparten estado global: `config.js` (constantes, modos, power-ups, habilidades y desafíos), `audio.js`, `core.js` (tablero, piezas, hold), `scoring.js`, `powerups.js`, `skills.js`, `challenges.js`, `render.js` y `main.js` (bucle, menús y teclado). Lo esencial:
 
 - **Modelo del tablero**: una matriz `ROWS × COLS` donde cada celda guarda `0` (vacía) o un índice de color (1–7) que identifica la pieza.
 - **Piezas**: definidas como matrices cuadradas. Para rotar se calcula la transposición + reverso de filas (`rotateCW`).
@@ -158,7 +167,7 @@ Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara
 03-tetris/
 ├── index.html      # Estructura del DOM y canvas
 ├── style.css       # Estilos del juego (dark theme)
-├── game.js         # Toda la lógica del Tetris (~300 líneas)
+├── js/             # Lógica del juego (scripts clásicos, ver arriba)
 └── README.md
 ```
 
@@ -166,7 +175,7 @@ Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara
 
 ## Personalización
 
-Algunos parámetros fáciles de tunear en `game.js`:
+Algunos parámetros fáciles de tunear en `js/config.js` (además de `MODES`, `POWERUPS`, `SKILLS` y `CHALLENGES`):
 
 | Constante      | Significado                              | Por defecto           |
 | -------------- | ---------------------------------------- | --------------------- |

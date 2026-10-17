@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Vanilla JS Tetris. Three files, no dependencies, no build step, no package.json, no tests.
+Vanilla JS Tetris. No dependencies, no build step, no package.json, no tests.
 
-- `index.html` — DOM structure: `#board` canvas (300×600, 10×20 grid of 30px blocks), `#next-canvas` preview (120×120), HUD spans (`#score`, `#lines`, `#level`), and the pause/game-over `#overlay`.
-- `style.css` — dark/retro arcade styling.
-- `game.js` — all game logic (~300 lines), plain top-level script (no modules, no classes).
+- `index.html` — DOM: left panel (`#hold-canvas`, `#status`, `#objective-section`, `#energy-section`, controls), `#board` canvas (300×600, 10×20 grid of 30px blocks) with the `#overlay` (menus, pause, game over, skill picker) on top of it, right panel (`#score`, `#lines`, `#level`, `#combo`, `#next-canvas`, `#queue-canvas`). Loads the scripts below in order.
+- `style.css` — dark/light retro arcade styling (theme tokens on `:root` / `[data-theme="light"]`).
+- `js/*.js` — plain classic scripts (no modules, no classes). Top-level `let`/`const`/functions are shared globals across files, so load order in `index.html` matters only for code that runs at load time (DOM lookups, the boot code at the end of `main.js`).
 
 ## Running the game
 
@@ -20,25 +20,38 @@ python3 -m http.server 8000
 npx serve .
 ```
 
-There is no lint, test, or build command in this repo — changes are verified by loading `index.html` in a browser and playing.
+There is no lint, test, or build command in this repo — changes are verified by loading `index.html` in a browser and playing. Debug helpers are plain globals usable from the browser console, e.g. `forcePowerup('bomb')`, `energy = 100`, `lines = 39`, `elapsed = 115000`.
 
-## Architecture (`game.js`)
+## Modes
 
-Everything lives in module-level `let` state (`board`, `current`, `next`, `score`, `lines`, `level`, `paused`, `gameOver`, `dropAccum`, `dropInterval`, `animId`) mutated directly by functions — there is no state container or class.
+`MODES` in `config.js` declares which extra mechanics each mode enables; code checks them with `has('specials' | 'powerups' | 'skills')`.
 
-- **Board**: `ROWS × COLS` matrix where each cell is `0` (empty) or a color index `1–8` identifying the piece type.
-- **Pieces**: `PIECES` holds each shape as a square matrix using its own color index as the fill value (see the `PIECES`/`COLORS` arrays at the top of the file). `rotateCW` rotates a shape via transpose + row-reverse.
-- **Collision** (`collide`): checks a shape at a given offset against board bounds and existing locked cells.
-- **Wall kicks** (`tryRotate`): after rotating, tries offsets `[0, -1, 1, -2, 2]` until one doesn't collide, else the rotation is discarded.
-- **Game loop** (`loop`, driven by `requestAnimationFrame`): accumulates elapsed time in `dropAccum`; once it exceeds `dropInterval`, the piece drops one row (or locks if it can't).
-- **Locking** (`lockPiece` → `merge` + `clearLines` + `spawn`): merges the current piece into `board`, clears completed rows (shifting the stack down, inserting an empty row at the top), then spawns the next piece.
-- **Scoring**: `LINE_SCORES = [0, 100, 300, 500, 800]` indexed by lines-cleared-at-once, multiplied by `level`. Hard drop adds 2 pts/row dropped; soft drop adds 1 pt/row.
-- **Leveling/speed**: level = `floor(lines / 10) + 1`; `dropInterval = max(100, 1000 - (level - 1) * 90)` ms.
-- **Ghost piece** (`ghostY`): projects the current piece straight down to its landing row; drawn at `globalAlpha = 0.2`.
-- **Game over**: triggered in `spawn()` when the newly spawned piece immediately collides with the board.
+- **Clásico**: 7 standard pieces (7-bag), hold, combos/B2B/T-spin/Perfect Clear.
+- **Arcade**: + special pieces (tuerca and pentominoes, 1×1 reward after a Tetris), power-ups, energy bar + skills.
+- **Desafíos**: Clásico rules + one entry of `CHALLENGES` (stored in `challenge`), whose properties (`goalLines`, `timeLimit`, `survive`, `garbageEvery`, `fixedRows`, `invisible`, `reverseFromLevel`) switch rules on in `challenges.js`.
 
-Input is a single `keydown` listener switching on `e.code` (arrows + `KeyX` to rotate, `Space` for hard drop, `KeyP` for pause); it's a no-op while paused or game-over except for the pause key itself.
+## Architecture (`js/`)
 
-## Tunable constants (top of `game.js`)
+- `config.js` — all tunables: board size, `COLORS`/`PIECES` (index = cell value: 1–7 standard, 8 tuerca, 9–11 pentominoes, 12 single, 13 wildcard, 14 fixed/garbage), scoring tables, `MODES`, `POWERUPS`, `SKILLS`, `CHALLENGES`.
+- `audio.js` — WebAudio-synthesized `sfx(name, n)`; `AudioContext` created on first keydown; `M` mutes (persisted).
+- `core.js` — core state (`mode`, `board`, `current`, `queue`, `hold`, `score`, …), 7-bag `randomPiece`, `collide`, `rotateCW`, `tryRotate(dir)` with kicks `[0, -1, 1, -2, 2]`, `clearLines` (returns cleared row indexes), `lockPiece`, `spawn`, `holdPiece`.
+- `scoring.js` — `combo`, `b2b`, `lastMoveRotate`, `isTSpin`, `scoreClear` (points, level, popups, sounds, and feeds power-up charge and energy).
+- `powerups.js` — power-up charging (every `POWERUP_EVERY` lines the piece in NEXT gets one), effects, wildcard explosions, `freezeMs`.
+- `skills.js` — `energy`, skill picker (`uiMode` `'skill'`/`'swap'`), timers (`previewMs`, `slowMs`, `freeHoldMs`) and `snapshot` for undo.
+- `challenges.js` — `challenge`, `elapsed`, objective panel, garbage rows, win checks, `rotationDir`, `cellVisible` (invisible pieces).
+- `render.js` — board/previews drawing, power-up marks, popups/flash/particles, HUD and per-frame `updateStatus`.
+- `main.js` — overlay/menus (`showOverlay`, `uiMode`), `init(mode, challengeId)`, `loop`, `endGame`/`winGame`, input, theme, boot.
 
-`COLS`, `ROWS`, `BLOCK` (px per cell), `COLORS`, `LINE_SCORES`, initial `dropInterval`. If `COLS`/`ROWS`/`BLOCK` change, update the `#board` canvas `width`/`height` in `index.html` to match (`COLS × BLOCK` and `ROWS × BLOCK`).
+Key flows:
+
+- **Piece queue**: `queue` holds `QUEUE_SIZE` upcoming pieces; `queue[0]` is NEXT. Pieces are `{ type, shape, x, y, powerup? }`.
+- **Locking** (`lockPiece`): snapshot (Arcade) → T-spin check → `merge` → power-up effect → `clearLines` → wildcard explosion → `scoreClear` → challenge check (may end the game) → `spawn`.
+- **Loop**: timers (freeze, skills, challenge) advance with the frame `dt`, so they stop while paused; auto-drop uses `dropInterval × SLOW_FACTOR` while slowed.
+- **Scoring**: `(LINE_SCORES[n] or TSPIN_SCORES[n]) × level × combo × (B2B ? 1.5 : 1)` + Perfect Clear bonus; hard drop 2 pts/row, soft drop 1 pt/row. Level = `floor(lines / 10) + 1`, `dropInterval = max(100, 1000 - (level - 1) * 90)`.
+- **Game over**: `endGame(reason)` (spawn collision, garbage overflow, time out); `winGame()` for challenges. Both go through `finishGame`, which stops the loop and shows Reiniciar/Menú.
+
+Input is a single `keydown` listener on `e.code`: `M` mute and `P` pause always work; skill picker keys are routed to `handleSkillKey`; game keys (arrows, `X`, `Space`, `C`/`Shift` hold, `E` skills) only run when `uiMode === 'play'`. Overlay buttons call `blur()` after click so `Space` doesn't re-trigger them.
+
+## Tunable constants (`js/config.js`)
+
+If `COLS`/`ROWS`/`BLOCK` change, update the `#board` canvas `width`/`height` in `index.html` to match (`COLS × BLOCK` and `ROWS × BLOCK`). Previews assume pieces fit in a 4×4 box.
