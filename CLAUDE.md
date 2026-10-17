@@ -39,8 +39,9 @@ There is no lint, test, or build command in this repo — changes are verified b
 - `powerups.js` — power-up charging (every `POWERUP_EVERY` lines the piece in NEXT gets one), effects, wildcard explosions, `freezeMs`.
 - `skills.js` — `energy`, skill picker (`uiMode` `'skill'`/`'swap'`), timers (`previewMs`, `slowMs`, `freeHoldMs`) and `snapshot` for undo.
 - `challenges.js` — `challenge`, `elapsed`, objective panel, garbage rows, win checks, `rotationDir`, `cellVisible` (invisible pieces).
-- `render.js` — board/previews drawing, power-up marks, popups/flash/particles, HUD and per-frame `updateStatus`.
-- `main.js` — overlay/menus (`showOverlay`, `uiMode`), `init(mode, challengeId)`, `loop`, `endGame`/`winGame`, input, theme, boot.
+- `skins.js` — `SKINS` (Retro, Neon, Pastel, Pixel art): each has a 15-color palette, canvas `bg`/`grid` (`null` = CSS theme) and `drawCell(context, px, py, size, color)`. `applySkin(key)` copies the palette in-place into `COLORS` (Retro keeps the original), persists `localStorage('skin')` and falls back to Retro on invalid values; loaded before `render.js`.
+- `render.js` — board/previews drawing (`drawBlock` delegates to `skin.drawCell`; `clearCanvas` paints the skin background on board/hold/next/queue), power-up marks, popups/flash/particles, HUD and per-frame `updateStatus`.
+- `main.js` — skin selector `#skin-toggle` (cycles skins, redraws via `refreshSkin`), overlay/menus (`showOverlay`, `uiMode`), `init(mode, challengeId)`, `loop`, `endGame`/`winGame`, input, theme, boot.
 
 Key flows:
 
