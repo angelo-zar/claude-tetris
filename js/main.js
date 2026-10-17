@@ -8,10 +8,14 @@ const overlayScore = document.getElementById('overlay-score');
 const overlayButtons = document.getElementById('overlay-buttons');
 
 let uiMode = 'menu'; // 'menu' (overlay con botones) | 'play' | 'skill' | 'swap' (selector de habilidades)
+let overlayBack = null; // acción de Escape en la vista actual del overlay (null = ninguna)
+let overlayKeys = null; // teclas extra de la vista actual: fn(code) → true si la consume
 
 // Muestra el overlay con un título, un subtítulo y botones [{ label, hint, action }].
 function showOverlay(title, subtitle, buttons, titleClass = '') {
   uiMode = 'menu';
+  overlayBack = null;
+  overlayKeys = null;
   overlayTitle.textContent = title;
   overlayTitle.className = titleClass;
   overlayScore.textContent = subtitle;
@@ -38,6 +42,8 @@ function showOverlay(title, subtitle, buttons, titleClass = '') {
 function hideOverlay() {
   overlay.classList.add('hidden');
   uiMode = 'play';
+  overlayBack = null;
+  overlayKeys = null;
 }
 
 function showMenu() {
@@ -55,11 +61,14 @@ function showMenu() {
   drawNext();
   drawHold();
   draw();
-  showOverlay('TETRIS', 'Elige un modo', Object.entries(MODES).map(([key, m]) => ({
-    label: m.name,
-    hint: m.hint,
-    action: key === 'challenge' ? showChallenges : () => init(key),
-  })));
+  showOverlay('TETRIS', 'Elige un modo', [
+    ...Object.entries(MODES).map(([key, m]) => ({
+      label: m.name,
+      hint: m.hint,
+      action: key === 'challenge' ? showChallenges : () => init(key),
+    })),
+    { label: `Nivel inicial: ${startLevel}`, hint: 'Clásico y Arcade', action: () => showLevelPicker(showMenu) },
+  ]);
 }
 
 function showChallenges() {
@@ -67,6 +76,67 @@ function showChallenges() {
     ...CHALLENGES.map(c => ({ label: c.name, hint: c.hint, action: () => init('challenge', c.id) })),
     { label: 'Volver', action: showMenu },
   ]);
+  overlayBack = showMenu;
+}
+
+// Selector del nivel inicial (se aplica en la próxima partida). back = vista a la que volver.
+function showLevelPicker(back) {
+  const change = d => {
+    setStartLevel(startLevel + d);
+    showLevelPicker(back);
+  };
+  showOverlay('NIVEL INICIAL', `Nivel ${startLevel} de ${START_LEVEL_MAX}\n← → para cambiar\nSe aplica en la próxima partida\n(no en Desafíos)`, [
+    { label: '+ Subir', action: () => change(1), disabled: startLevel >= START_LEVEL_MAX },
+    { label: '− Bajar', action: () => change(-1), disabled: startLevel <= 1 },
+    { label: 'Volver', action: back },
+  ]);
+  overlayBack = back;
+  overlayKeys = code => {
+    if (code === 'ArrowRight' || code === 'ArrowUp') { if (startLevel < START_LEVEL_MAX) change(1); return true; }
+    if (code === 'ArrowLeft' || code === 'ArrowDown') { if (startLevel > 1) change(-1); return true; }
+    return false;
+  };
+}
+
+// Lista de teclas para la vista "Ver controles" del menú de pausa.
+function controlsText() {
+  return [
+    '← →  mover',
+    '↑ / X  rotar',
+    '↓  bajar',
+    'Space  caída rápida',
+    'C / Shift  reservar',
+    ...(has('skills') ? ['E  habilidad'] : []),
+    'P / Esc  pausa',
+    'M  sonido',
+  ].join('\n');
+}
+
+function showPauseMenu() {
+  const levelHint = mode === 'challenge' ? 'no aplica en Desafíos' : 'al reiniciar';
+  showOverlay('PAUSA', '', [
+    { label: 'Reanudar', action: togglePause },
+    { label: 'Reiniciar', action: () => init(mode, challenge?.id) },
+    { label: 'Ver controles', action: showControls },
+    { label: `Nivel inicial: ${startLevel}`, hint: levelHint, action: () => showLevelPicker(showPauseMenu) },
+    { label: 'Menú', action: showMenu },
+  ]);
+  overlayBack = togglePause; // Escape en el menú de pausa reanuda
+}
+
+function showControls() {
+  showOverlay('CONTROLES', controlsText(), [{ label: 'Volver', action: showPauseMenu }]);
+  overlayBack = showPauseMenu;
+}
+
+// Teclas pulsadas ahora mismo. Al reanudar/empezar, las que siguen pulsadas se bloquean
+// hasta soltarlas, para que una tecla mantenida en el menú no mueva la pieza al volver.
+const keysDown = new Set();
+let blockedKeys = new Set();
+
+function blockHeldKeys() {
+  blockedKeys = new Set(keysDown);
+  dropAccum = 0; // la pieza no cae de golpe al volver
 }
 
 const restartButtons = () => [
@@ -93,15 +163,17 @@ function winGame() {
 }
 
 function togglePause() {
-  if (gameOver || !current) return;
+  // el selector de habilidades ya pausa el juego y se cierra con E/Escape
+  if (gameOver || !current || uiMode === 'skill' || uiMode === 'swap') return;
   paused = !paused;
   if (!paused) {
     hideOverlay();
+    blockHeldKeys();
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    showOverlay('PAUSA', '', [{ label: 'Continuar', action: togglePause }, ...restartButtons()]);
+    showPauseMenu();
   }
 }
 
@@ -134,11 +206,11 @@ function init(newMode, challengeId) {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  baseLevel = newMode === 'challenge' ? 1 : startLevel; // los retos están calibrados desde nivel 1
+  updateLevel(); // level y dropInterval desde el nivel inicial
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
-  dropAccum = 0;
+  blockHeldKeys(); // también pone dropAccum = 0
   lastTime = performance.now();
   queue = [];
   bag = [];
@@ -160,10 +232,22 @@ function init(newMode, challengeId) {
 
 document.addEventListener('keydown', e => {
   ensureAudio();
-  if (e.code === 'KeyM') { toggleMute(); return; }
-  if (e.code === 'KeyP') { togglePause(); return; }
+  keysDown.add(e.code);
+  if (e.code === 'KeyM') { if (!e.repeat) toggleMute(); return; }
+  if (e.code === 'KeyP') { if (!e.repeat) togglePause(); return; }
   if ((uiMode === 'skill' || uiMode === 'swap') && handleSkillKey(e.code)) return;
+  if (e.code === 'Escape') {
+    if (e.repeat) return;
+    if (uiMode === 'menu' && overlayBack) overlayBack(); // sub-vista → atrás; menú de pausa → reanudar
+    else if (uiMode === 'play') togglePause();
+    return;
+  }
+  if (uiMode === 'menu') {
+    if (overlayKeys?.(e.code)) e.preventDefault();
+    return;
+  }
   if (uiMode !== 'play' || paused || gameOver) return;
+  if (blockedKeys.has(e.code)) return; // mantenida desde antes de reanudar: esperar a soltarla
   switch (e.code) {
     case 'ArrowLeft':
       tryMove(-1);
@@ -192,6 +276,17 @@ document.addEventListener('keydown', e => {
       break;
   }
   updateHUD();
+});
+
+document.addEventListener('keyup', e => {
+  keysDown.delete(e.code);
+  blockedKeys.delete(e.code);
+});
+
+// Al perder el foco no llegan los keyup: olvidar las teclas pulsadas.
+window.addEventListener('blur', () => {
+  keysDown.clear();
+  blockedKeys.clear();
 });
 
 const themeToggle = document.getElementById('theme-toggle');
